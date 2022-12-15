@@ -5,4 +5,3 @@ type State struct {
 }
 
 var CurrState State
-w
