@@ -2,10 +2,12 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"nhooyr.io/websocket"
+	"os"
 	"website-status-checker-in-go/states"
 )
 
@@ -14,7 +16,10 @@ func main() {
 	states.CurrState.Name = "Empty"
 	fmt.Println("State before client Start up : ", states.CurrState)
 
-	ctx, conn := subscribe()
+	ctx, conn, err := subscribe()
+	if err != nil {
+		os.Exit(1)
+	}
 	go func() {
 		readSubscribedMessages := func() {
 			_, bytes, err := conn.Read(ctx)
@@ -37,14 +42,14 @@ func main() {
 	http.ListenAndServe(":8000", router)
 }
 
-func subscribe() (context.Context, *websocket.Conn) {
+func subscribe() (context.Context, *websocket.Conn, error) {
 	fmt.Println("Subscribing to PUSHPIN ")
 	ctx := context.Background()
 	conn, _, err := websocket.Dial(ctx, "ws://localhost:7999/subscribe", nil)
 	if err != nil {
 		fmt.Println("Error doing Dialing pushpin over websocket : " + err.Error())
+		return nil, nil, errors.New(fmt.Sprintf("Error doing Dialing pushpin over websocket : %s", err.Error()))
 	}
 	fmt.Printf("Dialed and subscribed successfully !")
-	return ctx, conn
+	return ctx, conn, nil
 }
-
